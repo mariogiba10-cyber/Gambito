@@ -1,0 +1,73 @@
+# Compila Gambito en un Mac de GitHub (gratis por ser repo público)
+# y publica el .ipa sin firmar como artefacto "Gambito-ipa".
+name: Compilar IPA
+
+on:
+  push:
+    branches: [main]       # en cada push a main
+  workflow_dispatch:       # y a mano: gh workflow run build-ipa.yml
+
+jobs:
+  compilar:
+    runs-on: macos-26      # Mac con Xcode 26.x
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"   # que brew no pierda minutos actualizándose
+    steps:
+      - name: Descargar el código del repo
+        uses: actions/checkout@v5
+
+      - name: Mostrar versiones de macOS y Xcode
+        run: |
+          sw_vers
+          xcodebuild -version
+
+      - name: Instalar XcodeGen
+        run: |
+          brew install xcodegen
+          brew list --versions xcodegen
+
+      - name: Generar Gambito.xcodeproj desde project.yml
+        run: xcodegen generate
+
+      - name: Compilar sin firmar
+        run: |
+          xcodebuild \
+            -project Gambito.xcodeproj \
+            -scheme Gambito \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            clean build
+
+      - name: Empaquetar .ipa y comprobar su contenido
+        run: |
+          APP_PATH="$(find build/Build/Products -type d -name 'Gambito.app' | head -n 1)"
+          if [ -z "$APP_PATH" ]; then echo "ERROR: no se encontró Gambito.app"; exit 1; fi
+          rm -rf Payload Gambito.ipa
+          mkdir Payload
+          cp -R "$APP_PATH" Payload/
+          ls Payload/Gambito.app
+          # Resumen fácil de filtrar con grep desde tu PC
+          PLIST="Payload/Gambito.app/Info.plist"
+          echo "Identificador: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")"
+          echo "Version: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")"
+          echo "Compilacion: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")"
+          # Si el icono no ha entrado en la app, fallamos aquí en vez de descubrirlo en el iPhone
+          ICONO="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName' "$PLIST" 2>/dev/null || true)"
+          if [ "$ICONO" != "AppIcon" ]; then echo "ERROR: el icono AppIcon no está en el Info.plist"; exit 1; fi
+          echo "Icono: $ICONO"
+          zip -qry Gambito.ipa Payload
+          unzip -l Gambito.ipa | head -n 20
+
+      - name: Publicar el .ipa como artefacto
+        uses: actions/upload-artifact@v7
+        with:
+          name: Gambito-ipa
+          path: Gambito.ipa
+          if-no-files-found: error
+          retention-days: 30

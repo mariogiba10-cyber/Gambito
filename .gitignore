@@ -1,0 +1,12 @@
+# Lo genera XcodeGen en cada compilación: no se sube
+*.xcodeproj/
+# Carpetas de compilación
+build/
+DerivedData/
+.build/
+.swiftpm/
+# Productos
+*.ipa
+Payload/
+# Basura de macOS
+.DS_Store

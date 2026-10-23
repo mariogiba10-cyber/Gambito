@@ -1,0 +1,55 @@
+# project.yml — la "receta" que XcodeGen convierte en Gambito.xcodeproj
+# El .xcodeproj NO se sube a GitHub: se regenera en cada compilación.
+name: Gambito
+
+options:
+  # Versión mínima de iOS para todo el proyecto
+  deploymentTarget:
+    iOS: "26.0"
+  # Idioma principal: español (lo usan VoiceOver y los textos del sistema)
+  developmentLanguage: es
+
+targets:
+  Gambito:
+    type: application          # es una app, no una librería
+    platform: iOS
+    sources:
+      - path: Gambito          # código Swift + Assets.xcassets (icono y colores)
+    settings:
+      base:
+        # Identidad de la app. NO cambiar (cuenta gratuita: máx. 10 App IDs nuevos/semana)
+        PRODUCT_BUNDLE_IDENTIFIER: com.mariogiba10.gambito
+        PRODUCT_NAME: Gambito
+        # Versión visible (la subiremos en cada fase)
+        MARKETING_VERSION: "0.0.1"
+        # Nº de compilación: en GitHub Actions se sustituye por el nº de ejecución
+        CURRENT_PROJECT_VERSION: "1"
+        # Info.plist generado automáticamente (claves que funcionaron en IPATest)
+        GENERATE_INFOPLIST_FILE: "YES"
+        INFOPLIST_KEY_CFBundleDisplayName: Gambito
+        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
+        # Solo orientación vertical en iPhone
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        # 1 = solo iPhone
+        TARGETED_DEVICE_FAMILY: "1"
+        # Icono y color de acento definidos en Assets.xcassets
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Swift 6: el compilador detecta errores de concurrencia antes de llegar al iPhone
+        SWIFT_VERSION: "6.0"
+        # Compilamos SIN firmar: la firma la pone Impactor en tu PC
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGN_IDENTITY: ""
+
+# Esquema explícito: xcodebuild lo necesita para saber qué compilar
+schemes:
+  Gambito:
+    build:
+      targets:
+        Gambito: all
+    run:
+      config: Debug
+    archive:
+      config: Release
