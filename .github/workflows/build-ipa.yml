@@ -1,18 +1,18 @@
-# Compila Gambito en un Mac de GitHub (gratis por ser repo público)
-# y publica el .ipa sin firmar como artefacto "Gambito-ipa".
+# Compila Gambito en un Mac de GitHub y publica el .ipa sin firmar.
+# NUEVO en la Fase 1: antes de compilar se ejecutan los tests del ajedrez.
 name: Compilar IPA
 
 on:
   push:
-    branches: [main]       # en cada push a main
-  workflow_dispatch:       # y a mano: gh workflow run build-ipa.yml
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   compilar:
-    runs-on: macos-26      # Mac con Xcode 26.x
-    timeout-minutes: 30
+    runs-on: macos-26
+    timeout-minutes: 40
     env:
-      HOMEBREW_NO_AUTO_UPDATE: "1"   # que brew no pierda minutos actualizándose
+      HOMEBREW_NO_AUTO_UPDATE: "1"
     steps:
       - name: Descargar el código del repo
         uses: actions/checkout@v5
@@ -21,6 +21,9 @@ jobs:
         run: |
           sw_vers
           xcodebuild -version
+
+      - name: Tests de GambitoCore (validación del ajedrez)
+        run: swift test --package-path GambitoCore
 
       - name: Instalar XcodeGen
         run: |
@@ -52,12 +55,10 @@ jobs:
           mkdir Payload
           cp -R "$APP_PATH" Payload/
           ls Payload/Gambito.app
-          # Resumen fácil de filtrar con grep desde tu PC
           PLIST="Payload/Gambito.app/Info.plist"
           echo "Identificador: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")"
           echo "Version: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")"
           echo "Compilacion: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")"
-          # Si el icono no ha entrado en la app, fallamos aquí en vez de descubrirlo en el iPhone
           ICONO="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName' "$PLIST" 2>/dev/null || true)"
           if [ "$ICONO" != "AppIcon" ]; then echo "ERROR: el icono AppIcon no está en el Info.plist"; exit 1; fi
           echo "Icono: $ICONO"

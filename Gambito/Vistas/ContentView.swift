@@ -1,6 +1,4 @@
-// ContentView.swift
-// Estructura principal: la barra de pestañas inferior.
-// En iOS 26, TabView + Tab dibuja automáticamente la barra con Liquid Glass.
+// ContentView.swift — barra de pestañas (Liquid Glass automático en iOS 26).
 
 import SwiftUI
 
@@ -11,7 +9,7 @@ struct ContentView: View {
                 InicioView()
             }
             Tab("Explorar", systemImage: "magnifyingglass") {
-                PantallaPendiente(titulo: "Explorar", icono: "magnifyingglass", fase: 2)
+                ExplorarDemoView()
             }
             Tab("Entrenar", systemImage: "target") {
                 PantallaPendiente(titulo: "Entrenar", icono: "target", fase: 5)
@@ -26,11 +24,11 @@ struct ContentView: View {
     }
 }
 
-// Pantalla provisional para las pestañas que llegarán en fases futuras.
+/// Pantalla provisional para las pestañas de fases futuras.
 struct PantallaPendiente: View {
-    let titulo: String     // texto grande
-    let icono: String      // nombre del símbolo SF Symbols
-    let fase: Int          // fase en la que se construirá
+    let titulo: String
+    let icono: String
+    let fase: Int
 
     var body: some View {
         ContentUnavailableView {
